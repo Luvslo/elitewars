@@ -83,7 +83,7 @@ class Users
         {
             return false;
         }
-        elseif ($this->checkUsername($username) == false)
+        elseif ($this->checkUsername($username) != false)
         {
             return false;
         }
