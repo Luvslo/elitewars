@@ -4,7 +4,7 @@ include 'classes/session.php';
 
 Session::init();
 
-include 'database.connect.php';
+include 'database.php';
 include 'classes/users.php';
 
 $userLoad = new Users($dbh);
