@@ -9,7 +9,7 @@ include 'classes/users.php';
 
 $userLoad = new Users($dbh);
 
-if ($userLoad->isLoggedIn())
+if ($userLoad::isLoggedIn() == true);
 {
     header('Location: members.php');
 }
