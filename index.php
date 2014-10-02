@@ -27,8 +27,7 @@ if (isset($_POST['doLogin']))
 }
 
 ?>
-
-
+<!-- begin login form -->
 <form method="POST">
     <label for="username">Username</label>
     <input required type="text" name="username" pattern="[a-zA-Z0-9]{2,50}">
@@ -38,5 +37,6 @@ if (isset($_POST['doLogin']))
 
     <input type="submit" name="doLogin" value="Login">
 </form>
+<!-- end login form -->
 
 
