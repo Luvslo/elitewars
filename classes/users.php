@@ -46,7 +46,7 @@ class Users
      */
     public function doRegister()
     {
-        $session_token = $_SESSION['registerToken'];
+        $sess_token = $_SESSION['registerToken'];
         $form_token = $_POST['registerToken'];
         $username = htmlentities($_POST['username']);
         $password = htmlentities($_POST['password']);
@@ -55,7 +55,7 @@ class Users
         $ip = htmlentities($_POST['ip']);
         $sec_question = htmlentities($_POST['sec_question']);
         $sec_answer = htmlentities($_POST['sec_answer']);
-        if ($session_token != $form_token)
+        if ($sess_token != $form_token)
         {
             return false;
         }
@@ -99,11 +99,13 @@ class Users
             AND strlen($username) > 2 AND strlen($username) < 50
             AND strlen($password) > 3)
         {
-            //everything checked out, hash the password, insert the user and unset the register session token.
+            //everything checked, now hash the password and insert the user.
             $password = self::hashPassword($password);
             $query = $this->dbh->prepare('INSERT INTO `stats`
                 (`username`,`email`,`password`,`ip`,`sec_question`,`sec_answer`) VALUES (?,?,?,?,?,?)')
             $query->execute(array($username, $email, $password, $ip, $sec_question, $sec_answer));
+    
+            //remove the register session token and return true (bool) registration successful.
             unset($_SESSION['registerToken']);
             return true;
         }
@@ -152,7 +154,13 @@ class Users
         $agent = $_SERVER['HTTP_USER_AGENT'];
         if (!self::checkPassword($user_pass, $form_pass))
         {
-            //session const
+            
+            //update the users status to active
+            $query = $this->dbh->prepare('UPDATE `stats` SET `login_timestamp` = ?
+                WHERE `id` = ?');
+            $query->execute(array(time(),$userid));
+            
+            //initiate session, and set them.
             Session::init();
             Session::set('logged_in', true);
             Session::set('userid', $userid);
@@ -160,7 +168,7 @@ class Users
             Session::set('count', 5);
             unset($_SESSION['loginToken']); //remove the login session token.
             
-            return true; //login successful.
+            return true; //login successful, return true (bool) login successful.
         }
     }
     
@@ -170,12 +178,55 @@ class Users
      */
     public static function isLoggedIn()
     {
-        if (isset($_SESSION['userid']) 
-            AND $_SESSION['logged_in'] == true 
-            AND $_SESSION['userAgent'] == $_SERVER['HTTP_USER_AGENT'] 
-            AND isset($_SESSION['userAgent'])
-        )
-        return true;
+        $check = 0;
+        if (Session::get('logged_in') == true)
+        {
+            ++$check;    
+        }
+        if (Session::get('userid'))
+        {
+            ++$check;
+        }
+        if (Session::get('userAgent'))
+        {
+            ++$check;
+        }
+        if (Session::get('userAgent') == $_SERVER['HTTP_USER_AGENT'])
+        {
+            ++$check;
+        }
+        return ($check == 4) ? true : false;
+    }
+    
+     /**
+     * Session count starts at 5. Every page load 1 is subtracted.
+     * When the count hits 0, an expired session is created
+     * and a regenerate_session_id(false) is called.
+     * 
+     * Next the checkSessExpire function is called,
+     * which calls regenerates_session_id(true)
+     * when the count is 3 and expired is set.
+     * 
+     * This is for ajax & added security.
+     */
+    public static function checkSessCount()
+    {
+        if ((Session::get('count') -= 1) == 0)
+        {
+            Session::set('count', 5);
+            Session::set('expired', true);
+            Session::reg(false); //regenerate the session id (false)
+        }
+        self::checkSessExpire();
+    }
+    
+    public static function checkSessExpire()
+    {
+        if (Session::get('count') == 3 AND Session::get('expired'))
+        {
+            unset(Session::get('expires')); //unset expired session.
+            Session::reg(true); //regenerate the session id (true)
+        }
     }
     
      /**
@@ -183,7 +234,7 @@ class Users
      */
     public static function logOut()
     {
-        return session_destroy(); /** note: this will be updated */
+        Session::destroy();
     }
 
     /**
