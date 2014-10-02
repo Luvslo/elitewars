@@ -176,7 +176,7 @@ class Users
      * Verifies if the user is logged in or not
      * @return bool
      */
-    public static function isLoggedIn()
+    public function isLoggedIn()
     {
         $check = 0;
         if (Session::get('logged_in') == true)
