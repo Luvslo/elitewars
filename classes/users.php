@@ -118,16 +118,31 @@ class Users
         }
     }
     
+     /**
+     * Create a random salt
+     * @returns mixed
+     */
     public static function uniqueSalt()
     {
         return substr(sha1(mt_rand()),0,22);
     }
     
+     /*
+     * Hash the password
+     * @param string $password
+     * @return hashed password
+     */
     public static function hashPassword($password)
     {
         return crypt($password, self::$algo . self::$cost . '$' . self::uniqueSalt());
     }
     
+     /*
+     * Verify password
+     * @param string $hash
+     * @param string $password
+     * @return bool
+     */
     public static function checkPassword($hash, $password)
     {
         $salt = substr($hash, 0, 29);
