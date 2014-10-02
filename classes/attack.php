@@ -35,12 +35,44 @@ class Attack
         }
         else
         {
-             /**
+            /**
              * Todo: Only allow attack on user once per hour, 
              *      or create an upgrade like more attacks per hour on a user.
              */
             return true;
         }
+    }
+    
+    /**
+     * Create an array of the targets stats and the users stats.
+     * @param string $targetname
+     * @return array
+     */
+    public function defineAttack($targetname)
+    {
+        //define the target
+        $targetFetch = $this->users->checkUsername($targetname);
+        $targetid = $targetFetch['id']; 
+        $targetData = $this->users->userData($targetid);
+        $target_atk = $targetData['attack'];
+        $target_hp = $targetData['hp'];
+        $target_crit = $targetData['critical'];
+
+        //define the attacker
+        $userData = $this->users->userData(Session::get('userid'));
+        $user_atk = $userData['attack'];
+        $user_hp = $userData['hp'];
+        $user_crit = $userData['critical'];
+        
+        return array(
+                        $targetid,
+                        $target_atk,
+                        $target_hp,
+                        $target_crit,
+                        $user_atk,
+                        $user_hp,
+                        $user_crit
+                    );
     }
     
 }
