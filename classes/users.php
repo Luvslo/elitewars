@@ -213,6 +213,7 @@ class Users
     {
         if ((Session::get('count') -= 1) == 0)
         {
+            unset(Session::get('count'));
             Session::set('count', 5);
             Session::set('expired', true);
             Session::reg(false); //regenerate the session id (false)
@@ -224,7 +225,7 @@ class Users
     {
         if (Session::get('count') == 3 AND Session::get('expired'))
         {
-            unset(Session::get('expires')); //unset expired session.
+            unset(Session::get('expired')); //unset expired session.
             Session::reg(true); //regenerate the session id (true)
         }
     }
@@ -270,13 +271,13 @@ class Users
     }
     
      /**
-     * Verify form tokens
-     * @param string $form
+     * Verify form tokens match the session
+     * @param string $token
      * @param string $session
      * @return bool
      */
-    public static function checkToken($form, $session)
+    public static function checkToken($token, $session)
     {
-        return ($form == $session);
+        return ($token == $session);
     }
 }
