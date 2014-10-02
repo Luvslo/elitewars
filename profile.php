@@ -18,7 +18,7 @@ $userLoad = new Users(Database $dbh);
 if ($userLoad->userData($userid) == false)
 {
     $error = 'Error: This user does not exist.';
-    include_once 'includes/error.php';
+    include_once 'error.php';
     exit;
 }
 else
