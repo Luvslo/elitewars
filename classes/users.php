@@ -118,7 +118,88 @@ class Users
         }
     }
     
+    
+    public function doRegister()
+    {
+        $username = htmlentities($_POST['username']);
+        $password = htmlentities($_POST['password']);
+        $form_token = $_POST['loginToken'];
+        $sess_token = $_SESSION['loginToken'];
+
+        $time = time() - 10*60; //now - 10 mins
+        
+        $query = $this->dbh->prepare('SELECT `ip` FROM `failed_logins`
+            WHERE `time` > ?');
+        $query->execute(array($time));
+        if ($query->rowCount() >= 3)
+        {
+            return false; //the user must wait 10 minutes to try logging in again.
+        }
+        elseif (!self::checkToken($form_token, $sess_token))
+        {
+            return false;
+        }
+        elseif (!isset($username) OR !isset($password))
+        {
+            return false;
+        }
+        elseif (!preg_match('/^[a-z\d]{2,64}$/i', $username))
+        {
+            return false;
+        }
+        elseif ($this->checkUsername($username) == false)
+        {
+            return false;
+        }
+        $userData = $this->checkUsername($username);
+        $userid = $userData['id'];
+        $user_pass = $userData['password'];
+        if (!self::checkPassword($user_pass, $form_pass))
+        {
+            self::userSessionStart($userid, $agent);
+            unset($_SESSION['loginToken']);
+            return true;
+        }
+    }
+    
      /**
+     * Once upon a users login, the session array will be started.
+     * @param int $userid
+     * @param string $agent
+     */
+    public static function userSessionStart($userid, $agent)
+    {
+        session_regenerate_id(true);
+        $_SESSION['logged_in'] = true;
+        $_SESSION['userid'] = $userid;
+        $_SESSION['count'] = 5;
+        $_SESSION['userAgent'] = $agent;
+    }
+    
+    
+     /**
+     * Verifies if the user is logged in or not
+     * @return bool
+     */
+    public static function isLoggedIn()
+    {
+        if (isset($_SESSION['userid']) 
+            AND $_SESSION['logged_in'] == true 
+            AND $_SESSION['userAgent'] == $_SERVER['HTTP_USER_AGENT'] 
+            AND isset($_SESSION['userAgent'])
+        )
+        return true;
+    }
+    
+     /**
+     * Destroys the users session, and logs them out.
+     */
+    public static function logOut()
+    {
+        return session_destroy(); /** note: this will be updated */
+    }
+
+    /**
      * Create a random salt
      * @returns mixed
      */
@@ -148,5 +229,16 @@ class Users
         $salt = substr($hash, 0, 29);
         $new_hash = crypt($password, $salt);
         return ($hash == $new_hash);
+    }
+    
+     /**
+     * Verify form tokens
+     * @param string $form
+     * @param string $session
+     * @return bool
+     */
+    public static function checkToken($form, $session)
+    {
+        return ($form == $session);
     }
 }
