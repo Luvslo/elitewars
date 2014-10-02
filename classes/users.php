@@ -9,18 +9,9 @@ class Users
      /**
      * Constructor  
      */
-    public function __construct($database)
+    public function __construct(Database $database)
     {
         $this->dbh = $database;
-        
-        if (isset($_POST['doRegister']))
-        {
-            $this->doRegister();
-        }
-        if (isset($_POST['doLogin']))
-        {
-            $this->doLogin();
-        }
     }
     
      /**
@@ -50,7 +41,7 @@ class Users
     }
     
      /**
-     * Register the user
+     * Perform registration proccess.
      * @return bool 
      */
     public function doRegister()
@@ -118,8 +109,11 @@ class Users
         }
     }
     
-    
-    public function doRegister()
+     /**
+     * Perform login proccess.
+     * @return bool
+     */
+    public function doLogin()
     {
         $username = htmlentities($_POST['username']);
         $password = htmlentities($_POST['password']);
@@ -151,31 +145,23 @@ class Users
         {
             return false;
         }
+        //define user const
         $userData = $this->checkUsername($username);
         $userid = $userData['id'];
         $user_pass = $userData['password'];
+        $agent = $_SERVER['HTTP_USER_AGENT'];
         if (!self::checkPassword($user_pass, $form_pass))
         {
-            self::userSessionStart($userid, $agent);
-            unset($_SESSION['loginToken']);
-            return true;
+            Session::init();
+            Session::set('logged_in', true);
+            Session::set('userid', $userid);
+            Session::set('agent', $agent);
+            Session::set('count', 5);
+            unset($_SESSION['loginToken']); //remove the login session token.
+            
+            return true; //login successful.
         }
     }
-    
-     /**
-     * Once upon a users login, the session array will be started.
-     * @param int $userid
-     * @param string $agent
-     */
-    public static function userSessionStart($userid, $agent)
-    {
-        session_regenerate_id(true);
-        $_SESSION['logged_in'] = true;
-        $_SESSION['userid'] = $userid;
-        $_SESSION['count'] = 5;
-        $_SESSION['userAgent'] = $agent;
-    }
-    
     
      /**
      * Verifies if the user is logged in or not
