@@ -34,4 +34,13 @@ function errorHandle($errno, $errstr, $errfile, $errline)
     }
 }
 
+//errors
 set_error_handler("errorHandle");
+
+//exceptions
+set_exception_handler(function ($exception) {
+   $file = "var/log/exceptionLog.log";
+   file_put_contents($file, $exception->__toString(), FILE_APPEND);
+});
+ 
+throw new Exception();
