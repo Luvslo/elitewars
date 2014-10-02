@@ -4,8 +4,13 @@ class Users
 {
     private $dbh;
     
+     /**
+     * Constructor  
+     */
     public function __construct($database)
     {
+        $this->dbh = $database;
+        
         if (isset($_POST['doRegister']))
         {
             $this->doRegister();
@@ -40,6 +45,10 @@ class Users
             WHERE `username` = ?');
         $query->execute(array($username));
         return ($query->rowCount() > 0) ? $query->fetch() : false;
+    }
+    
+    public function doRegister()
+    {
     }
     
 }
