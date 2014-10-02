@@ -60,6 +60,7 @@ class Attack
 
         //define the attacker
         $userData = $this->users->userData(Session::get('userid'));
+        $username = $userData['username'];
         $user_atk = $userData['attack'];
         $user_hp = $userData['hp'];
         $user_crit = $userData['critical'];
@@ -69,6 +70,7 @@ class Attack
                         $target_atk,
                         $target_hp,
                         $target_crit,
+                        $username,
                         $user_atk,
                         $user_hp,
                         $user_crit
