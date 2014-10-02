@@ -127,7 +127,7 @@ class Users
         return substr(sha1(mt_rand()),0,22);
     }
     
-     /*
+     /**
      * Hash the password
      * @param string $password
      * @return hashed password
@@ -137,7 +137,7 @@ class Users
         return crypt($password, self::$algo . self::$cost . '$' . self::uniqueSalt());
     }
     
-     /*
+     /**
      * Verify password
      * @param string $hash
      * @param string $password
