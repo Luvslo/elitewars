@@ -152,6 +152,7 @@ class Users
         $agent = $_SERVER['HTTP_USER_AGENT'];
         if (!self::checkPassword($user_pass, $form_pass))
         {
+            //session const
             Session::init();
             Session::set('logged_in', true);
             Session::set('userid', $userid);
