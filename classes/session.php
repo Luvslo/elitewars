@@ -37,6 +37,17 @@ class Session
     }
     
      /**
+     * Regenerates the session_id
+     * @param bool (true) or (false)
+     * @returns session_regenerate_id
+     */
+    public static function reg($value)
+    {
+         session_regenerate_id($value);
+    }
+    
+    
+     /**
      * Deletes the session/logs the user out.
      */ 
     public static function destroy()
