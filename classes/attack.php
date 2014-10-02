@@ -11,6 +11,12 @@ class Attack
         Session::init();
     }
     
+    /**
+     * Checks for any errors before making the actual attack.
+     * @param string $targetname
+     * @param int $attack_cost
+     * @return bool
+     */
     public function attackCheck($targetname, $attack_cost)
     {
         if ($attack_cost < 1 OR $attack_cost > 50)
