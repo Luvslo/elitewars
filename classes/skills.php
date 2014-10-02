@@ -1,4 +1,8 @@
 
+/**
+* currently unfinished, a cast & train section is being developed.
+*/
+
 class Skills
 {
 	private $dbh;
