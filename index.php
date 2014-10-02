@@ -1,14 +1,29 @@
 <?php
 
-session_start();
+include 'classes/session.php';
+
+Session::init();
+
 include 'database.connect.php';
 include 'classes/users.php';
 
 $userLoad = new Users($dbh);
 
-if($userLoad->isLoggedIn() == true)
+if ($userLoad->isLoggedIn())
 {
     header('Location: members.php');
+}
+
+if (isset($_POST['doLogin']))
+{
+    if ($userLoad->doLogin() == true)
+    {
+        header('Location: members.php');
+    }
+    else
+    {
+        echo 'Error: Login failed. Please try again.';
+    }
 }
 
 ?>
