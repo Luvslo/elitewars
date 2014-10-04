@@ -99,4 +99,6 @@ class Skills
 		$query->execute(array($userid,$skillid));
 		return ($query->rowCount() != 0) ? $recharge = $query->fetchColumn() : false;
 	}
+	
+	public function 
 }
