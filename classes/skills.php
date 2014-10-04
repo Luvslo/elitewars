@@ -28,6 +28,8 @@ class Skills
 		return ($query->rowCount() > 0) ? $query->fetchAll() : false; 
 	}
 	
+	
+	
 	 /**
 	 * Fetch all skills based off id, results in ASC order.
 	 * @param int $skillid
