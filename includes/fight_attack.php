@@ -11,6 +11,8 @@ Session::init();
 include '../classes/users.php';
 include '../classes/attack.php';
 
+$attackLoad = new Attack($dbh);
+
 list ($targetname, $target_atk, $target_hp, $target_crit, 
       $username, $user_atk, $user_hp, $user_crit) = $attackLoad->defineAttack($targetname);
    
