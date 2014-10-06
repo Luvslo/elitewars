@@ -15,12 +15,35 @@ class World
     {
         $user = $this->users->userData(Session::get('userid'));
         $roomid = $user['roomid'];
-        $query = $this->dbh->prepare('SELECT `x`,`y`,`zone` FROM `rooms`
+        $query = $this->dbh->prepare('SELECT `x`,`y`,`z` FROM `rooms`
             WHERE `roomid` = ?');
         $query->execute(array($roomid));
         return ($query->rowCount() > 0) ? $query->fetch() : false;
     }
+    
+    public function roomMap()
+    {
+        $query = $this->dbh->prepare('SELECT `image` FROM `roommaps`
+            WHERE `z` = ?');
+        $query->execute(array($z));
+        return ($query->rowCount() > 0) ? $image = $query->fetchColumn() : false;
+    }
+    
+    /**
+     * Loads the room info. (ajax will be calling this function each map move.)
+     * @return array
+     */
+    public function createWorld()
+    {
+        $room = $this->roomData();
+        $x = $room['x'];
+        $y = $room['y'];
+        $z = $room['z'];
+        $image = $this->roomMap();
+        return array($x, $y, $z, $image);
+    }
 }
 
-$world = new World($dbh);
-$room = $world->roomData();
+
+
+
