@@ -16,7 +16,7 @@ class CronJobs
         /**
          * Mob updates (1 minute)
          */
-        public static function mobs()
+        private static function mobs()
         {
                 $query = self::$dbh->query('UPDATE `mobkills` SET `killed` = `killed`-1 WHERE `killed` > 0');
                 $query = self::$dbh->query('DELETE FROM `mobkills` WHERE `killed` = 0');
@@ -26,7 +26,7 @@ class CronJobs
         /**
          * Raid updates (1 minute)
          */
-        public static function raids()
+        private static function raids()
         {
                 $query = self::$dbh->prepare('SELECT `godid`,`godhp` FROM `god`
                         WHERE `timespawn` <= ?
@@ -47,7 +47,7 @@ class CronJobs
         /**
          * Potions update (1 minute)
          */
-        public static function potions()
+        private static function potions()
         {
                 $query = self::$dbh->query('SELECT `castid` FROM `potscast` WHERE `duration` > 0');
                 while ($castid = $query->fetchColumn())
@@ -66,7 +66,7 @@ class CronJobs
         /**
          * Skill updates (1 minute)
          */
-        public static function skills()
+        private static function skills()
         {
                 $query = self::$dbh->query('UPDATE `castskills` SET `duration` = `duration`-1 WHERE `duration` > 0');
                 $query = self::$dbh->query('UPDATE `castskills` SET `expired` = 1 WHERE `duration` = 0');
@@ -85,5 +85,16 @@ class CronJobs
                 		AND `skillid` = ?');
                 	$query->execute(array($userid, $skillid));
                 }
+        }
+        
+        /**
+         * Call the functions that run during the one minute cron.
+         */
+        public static function oneMinute()
+        {
+                self::mobs;
+                self::raids;
+                self::potions;
+                self::skills;
         }
 }
