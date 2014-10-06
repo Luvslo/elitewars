@@ -102,7 +102,7 @@ class Users
             //everything checked, now hash the password and insert the user.
             $password = self::hashPassword($password);
             $query = $this->dbh->prepare('INSERT INTO `stats`
-                (`username`,`email`,`password`,`ip`,`sec_question`,`sec_answer`) VALUES (?,?,?,?,?,?)')
+                (`username`,`email`,`password`,`ip`,`sec_question`,`sec_answer`) VALUES (?,?,?,?,?,?)');
             $query->execute(array($username, $email, $password, $ip, $sec_question, $sec_answer));
     
             //remove the register session token and return true (bool) registration successful.
