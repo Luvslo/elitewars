@@ -1,5 +1,6 @@
 <?php
 
+include '../database.php';
 include '../classes/items.php';
 
 //Script for viewing an onmouseover for an item.
