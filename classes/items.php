@@ -38,7 +38,7 @@ class Items
     }
     
     /**
-     * Generate the increase for the item being viewed.
+     * Generate the gem increase for the item being viewed. (item upgrade)
      * @param int $gems
      * @return int
      */
@@ -140,17 +140,35 @@ class Items
 	       	}
 	       	$set_data .= ($equipped == 1) ? '<br />' : '';
         }
-	    //echo $set_data; //debugging.
+	//echo $set_data; //debugging.
 	    
-	    if ($p_total > 1)
-	    {
-	        $percent = $p_total / $total;
-	        $attack_set = round($attack * $percent);
-	        $hp_set = round($hp * $percent);
-	    }
-	    return array ($set_name, $set_data, $attack_set, $hp_set);
+	if ($p_total > 1)
+	{
+	    $percent = $p_total / $total;
+	    $attack_set = round($attack * $percent);        
+	    $hp_set = round($hp * $percent);
+	}
+	    return array ($set_name, $set_data, $attack_set, $hp_set, $p_total);
     }
     
+    /**
+     * Get the attack bonus and hp bonus from the set.
+     * @param int $setid
+     * @return array
+     */
+    public function fullSetBonus($setid)
+    {
+    	$set = $this->setData($setid);
+    	$attack_bonus = $set['attackbonus'];
+    	$hp_bonus = $set['hpbonus'];
+    	return array($attack_bonus, $hp_bonus);
+    }
+    
+    /**
+     * Find how many items the user has based off 'itemid' - for displaying quest quantity.
+     * @param int $itemid
+     * @return int
+     */
     public function pItemCount($itemid)
     {
         $query = $this->dbh->prepare('SELECT `itemid` FROM `pitems`
@@ -161,14 +179,19 @@ class Items
         return $query->rowCount();
     }
     
+    /**
+     * Color code the 'level'
+     * @param int $level
+     * @return string
+     */
     public function levelRequired($level)
     {
         switch ($level)
         {
-            case ($level > 0 OR $level < 10):
+            case ($level > 0 OR $level < 10): //1-9
                 $level_output = '<span style="color:#FF8000;">[Level Required - '.$level.']</span>';
                 break;
-            case ($level > 10 OR $level < 20):
+            case ($level >= 10 OR $level < 20): //10 - 19
                 $level_output = '<span style="color:#66CD00;">[Level Required - '.$level.']</span>';
                 break;
             default: '';
@@ -178,6 +201,12 @@ class Items
     }
 
     
+    /**
+     * Builds the view for displaying the stats on the item.
+     * @param int $stat
+     * @param int $aug_stat
+     * @param string $stat_text
+     */
     public function createStats($stat, $aug_stat, $stat_text)
     {
         if ($stat > 0 OR $aug_stat > 0)
@@ -192,8 +221,7 @@ class Items
         return $item_layout;
     }
 
-
-}
+} //end class.
     
 
 //Script for viewing an onmouseover for an item.
@@ -249,8 +277,8 @@ if (isset($_GET['itemid']))
         if ($augid != 0)
         {
             $paugData = $items->pItemData($augid);
-            $augid = $paug['itemid'];
-            $augData = $items->itemData($augid);
+            $aug_itemid = $paug['itemid'];
+            $augData = $items->itemData($aug_itemid);
             $aug[$i] = $augid;
             $aug_type = $augData['type'];
         }
@@ -267,7 +295,7 @@ if (isset($_GET['itemid']))
     //set information.
     if ($setid != 0)
     {
-        list ($set_name, $set_data, $attack_set, $hp_set) = $items->configSet($setid);
+        list ($set_name, $set_data, $attack_set, $hp_set, $pset_items) = $items->configSet($setid);
     }
     
     //construct the actual layout
@@ -290,40 +318,7 @@ if (isset($_GET['itemid']))
         }
     }
     
-    //attack
-    if ($attack != 0 OR $aug_attack != 0)
-    {
-        $item_layout .= '<br/>'.$attack;
-        if ($aug_attack != 0)
-        {
-            $item_layout .= '<span style="color:#00FF00;"> (+'.$aug_attack.')</span>';
-        }
-        $item_layout .= '&nbsp;Attack';
-    }
-    
-    //hp
-    if ($hp != 0 OR $aug_hp != 0)
-    {
-        $item_layout .= '<br/>'.$hp;
-        if ($aug_hp != 0)
-        {
-            $item_layout .= '<span style="color:#OOFFOO;"> (+'.$aug_hp.')</span>';
-        }
-        $item_layout .= '&nbsp;Hp';
-    }
-
-    //exp per turn
-    if ($ept != 0 OR $aug_ept != 0)
-    {
-        $item_layout .= '<br/>'.$ept;
-        if ($aug_ept != 0)
-        {
-            $item_layout .= '<span style="color:#00FF00;"> (+'.$aug_ept.')</span>';
-        }
-        $item_layout .= '&nbsp;Exp per turn'
-    }
-    
-    
+    //configure all the items stats into the layout.
     $item_layout .= $items->createStats($attack, $aug_attack, 'Attack');
     $item_layout .= $items->createStats($hp, $aug_hp, 'Hp');
     $item_layout .= $items->createStats($ept, $aug_ept, 'Exp per turn');
@@ -332,8 +327,48 @@ if (isset($_GET['itemid']))
     $item_layout .= $items->createStats($block, $aug_block, 'Block');
     $item_layout .= $items->createStats($max_attacks, $aug_max_attacks, 'Max Attacks');
     
-
-
-
+    if ($setid != 0)
+    {
+    	$item_layout .= '<br/><br/>'.$set_name.' Set <br/>';
+    	$item_layout .= '+'.$attack_set.' Attack / +'.$hp_set.' Hp)<br/>';
+    	$item_layout .= $set_data;
+    	if ($pset_items > 1)
+    	{
+    		$item_layout .= '(+'.$attack_set.' Attack / +'.$hp_set.')';
+    	}
+    }
+    $item_layout .= '<img src="'.$image.'">';
+    
+    //gems
+    if ($type == 'items')
+    {
+    	$item_layout .= '<br/><img src="'.$gem1.'"><img src="'.$gem2.'"><img src="'.$gem3.'"><img src="'.$gem4.'"><br/>';
+    
+    	//augs
+    	foreach ($i = 0; $i < $aug_slots; ++$i)
+    	{
+    		$augid = $aug[$i];
+    		if ($augid != '')
+    		{
+    			$paugData = $items->pitemData($augid);
+    			$aug_itemid $paugData['itemid'];
+    			$augData = $items->itemData($aug_itemid);
+    			$aug_image = $augData['image'];
+    			$item_layout .= '<img src="'.$aug_image.'">';
+    		}
+    		else
+    		{
+    			$aug_image = 'images/equipment/augslot.jpg';
+    			$item_layout .= '<img src="'.$aug_image.'">';
+    		}
+    		usleep(10);
+    	}
+    	
+    	$item_layout .= ($charges != 0) ? '<br/>Charges: '.$charges : '';
+    	$item_layout .= ($duration > 1) ? '<br/>Duration: '.$duration : '';
+    	
+    	$item_layout .= '<br/><br/>'.$information;
+    	
+}
 
 
