@@ -43,7 +43,14 @@ class Session
      */
     public static function reg($value)
     {
-         session_regenerate_id($value);
+        if ($value == 'true')
+        {
+            session_regenerate_id(true);
+        }
+        else
+        {
+            session_regenerate_id(false);
+        }
     }
     
     
