@@ -9,7 +9,7 @@ class World
     {
         $this->dbh = $database;
         $this->users = new Users($this->dbh);
-        $this->userid = $_SESSION['userid'];
+        $this->userid = Session::get('userid');
     }
     
     /**
