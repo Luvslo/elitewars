@@ -44,3 +44,56 @@ if (isset($_GET['x'])
         
     }
 }
+
+
+	echo '<table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" bordercolordark="#5D6567" bordercolorlight="#5D6567">
+		<tr>
+			<td colspan="2">
+				<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" width="100%" bordercolor="#5D6567" bgcolor="#2e2e2e">
+					<tr>
+					 	<td width="100%">
+							<table border="0" cellpadding="10" cellspacing="0" style="border-collapse: collapse" width="100%">
+								<tr>
+									<td width="100%" colspan="2" align="left" valign="top">
+										<p align="center">You have just clicked '.$clickname.'\'s link.
+									</td>
+								</tr>
+								<tr>
+									<td align="center" valign="top" rowspan="2" width="250">
+										<img border="0" src="'.$image.'"><br/>
+										<a href="profile.php?id='.$clickid.'">View Profile</a>
+									</td>
+									<td width="100%" align="left">
+										<p align="center">By clicking on that link, you just made '.$clickname.'\'s </b> power increase by '.$click_increase.'</p>
+									</td>
+								</tr>
+								<tr>
+									<td width="100%" align="left">
+										<p align="center"><font size="4" color="#D15A33"><b>WANT TO PLAY? CREATE YOUR OWN CHARACTER <img border="0" src="images/icon_arrowdown.gif" width="7" height="11"></b></font></td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr>
+			<td align="left" valign="top" width="100%">
+				<table border="0" cellpadding="10" cellspacing="0" style="border-collapse: collapse" width="100%">
+					<tr>
+						<td width="5%" align="left" valign="top">&nbsp;
+						</td>
+						<td width="60%" align="left" valign="top">
+							<p align="right"><b><a href="home.php?ref='.$clickid.'">CREATE YOUR CHARACTER</a> &gt;&gt;</b></p>
+						</td>
+						<td width="5%" align="left" valign="top">&nbsp;
+						</td>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>';
+
+//</td>
+//</tr>
