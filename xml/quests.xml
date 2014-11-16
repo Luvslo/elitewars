@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE quests [
         <!ELEMENT quests    (quest+)>
-        <!ELEMENT quest     (title, step+)>
+        <!ELEMENT quest     (title, step1, step2, step3, step4, step5)>
         <!ELEMENT title     (#PCDATA)>
+        <!ELEMENT step1     (#PCDATA)>
+        <!ELEMENT step2     (#PCDATA)>
+        <!ELEMENT step3     (#PCDATA)>
+        <!ELEMENT step4     (#PCDATA)>
+        <!ELEMENT step5     (#PCDATA)>
         <!ELEMENT quests    xmlns        CDATA  #IMPLIED>
         <!ELEMENT quests    xmlns:xhtml  CDATA  #IMPLIED>
         <!ELEMENT quest     id           ID     #IMPLIED>
@@ -16,11 +21,23 @@
         <title>Quest Title 1</title>
         
         <!-- quest steps dialog -->
-        <step id="1">This is step 1 of the quest</step>
-        <step id="2">This is step 2 of the quest</step>
-        <step id="3">This is step 3 of the quest</step>
-        <step id="4">This is step 4 of the quest</step>
-        <step id="5">This is the completed step of the quest</step>
+        <step1>This is step 1 of the quest</step>
+        <step2>This is step 2 of the quest</step>
+        <step3>This is step 3 of the quest</step>
+        <step4>This is step 4 of the quest</step>
+        <step5>This is the completed step of the quest</step>
+
+    </quest>
+    <quest id="1">
+ 
+        <title>Quest Title 1</title>
+        
+        <!-- quest steps dialog -->
+        <step1>This is step 1 of the quest</step>
+        <step2>This is step 2 of the quest</step>
+        <step3>This is step 3 of the quest</step>
+        <step4>This is step 4 of the quest</step>
+        <step5>This is the completed step of the quest</step>
 
     </quest>
 </quests>
