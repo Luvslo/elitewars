@@ -14,9 +14,25 @@ function completeQuest(questid)
     });
 }
 
+// Accept Quest
+function acceptQuest(questid)
+{
+    $.ajax({
+        type: 'GET',
+        cache: false,
+        url: 'includes/questAccept.php?questid='+questid,
+        success: function (html)
+        {
+            $('#acceptQuest').html(html);
+        }
+    });
+}
+
 </script>
 
 <?php
+
+error_reporting(E_ALL);
 
 class Quests
 {
@@ -109,95 +125,98 @@ class Quests
     }
 }
 
-$doc = new DomDocument;
-$doc->validateOnParse = true;
-$doc->Load('quests.xml');
-
 $dbh = new Database();
-
-//$xmlQuests = simplexml_load_file('quests.xml'); // old way..
 $dbQuests = new Quests($dbh);
 $items = new Items($dbh);
 
+$userid = Session::get('userid'); 
 $questid = (int) $_GET['questid'];
 
-$userid = Session::get('userid'); 
+$questActions = $dbQuests->questActions($questid);
+
+// Does the Quest exist
+if (!$questActions OR !isset($questid))
+{
+    echo 'Error: This quest does not exist!';
+    exit;
+}
 
 $playerQuest = $dbQuests->playerQuest($questid, $userid);
 
+// Quest needs to be accepted.
 if (!$playerQuest)
 {
-    echo $questActions->step1;
+    echo $questActions->step1 . '<br /><br />';
+    echo '<a style="font-weight:bold;" onclick="acceptQuest(\''.$questid.'\')">Accept Quest</a>';
 }
 
-$step = $playerQuest->step;
-
-// Check if the player has the quest completed, if so than show the completed dialogue
-if ($playerQuest->completed === 1)
+// Quest completed.
+elseif ($playerQuest->completed === 1) 
 {
     echo $questActions->step5;
 }
+
+// Quest in progress.
 elseif ($playerQuest->completed === 0)
 {
-    echo $doc->getElementById($questid)->step . $step . "\n";
+    echo $questActions->step3;
     
-    if ($doc->getElementById($questid)->step . $step === 3)
+    $totalObjectives = 0;
+    $totalCompleted = 0;
+    foreach ($dbQuests->questObjectives($questid) as $objective)
     {
-        $totalObjectives = 0;
-        $totalCompleted = 0;
-        foreach ($dbQuests->questObjectives($questid) as $objective)
-        {
-            $killid = $objective->killid;
-            $collectid = $objective->collectid;
-            $amount = $objective->amount;
+        $killid = $objective->killid;
+        $collectid = $objective->collectid;
+        $amount = $objective->amount;
 
-            // Display kills
-            if (isset($killid))
-            {
-                $mob = $dbQuests->mobData($killid);
-                $mobname = $mob->name;
-                
-                ++$totalObjectives;
-                
-                // Determine the amount of kills the player has on the 'kill' mob.
-                // Any kill that was after the questStarted date is a kill.
-                $dateStarted = $playerQuest->dateStarted;
-                $playerKills = $dbQuests->playerKills($questid, $userid, $dateStarted);
-                if ($playerKills >= $amount)
-                {
-                    ++$totalComplete;
-                }
-                
-                echo 'Killed: ' . $playerKills . ' / ' . $amount . ' ' . $mobname . '<br />';
-            }
-            
-            // Display items 
-            if (isset($collectid))
-            {
-                $item = $items->itemData($collectid);
-                $itemname = $item['name'];
-                
-                ++$totalObjectives;
-                
-                if ($playerItems >= $amount)
-                {
-                    ++$totalComplete;
-                }
-                
-                echo 'Collected: 0 / ' . $amount . ' ' . $itemname . '<br />';
-            }
-        }
-        
-        echo '</div>'; // End completeQuest div.
-    
-        // Complete Quest (ajax onclick request.)
-        if ($totalComplete >= $totalObjectives)
+        // Display kills
+        if (isset($killid))
         {
-            $dbQuests->questComplete($questid, $userid);
-            if ($playerQuest->completed === 1)
+            $mob = $dbQuests->mobData($killid);
+            $mobname = $mob->name;
+                
+            ++$totalObjectives;
+                
+            // Determine the amount of kills the player has on the 'kill' mob.
+            // Any kill that was after the questStarted date is a kill.
+            $dateStarted = $playerQuest->dateStarted;
+            $playerKills = $dbQuests->playerKills($questid, $userid, $dateStarted);
+            if ($playerKills >= $amount)
             {
-                echo '<a onclick="completeQuest(\''.$questid.'\')">Complete Quest</a>';   
+                ++$totalComplete;
             }
+                
+            echo 'Killed: ' . $playerKills . ' / ' . $amount . ' ' . $mobname . '<br />';
+        }
+            
+        // Display items 
+        if (isset($collectid))
+        {
+            $item = $items->itemData($collectid);
+            $itemname = $item['name'];
+                
+            ++$totalObjectives;
+                
+            if ($playerItems >= $amount)
+            {
+                ++$totalComplete;
+            }
+                
+            echo 'Collected: 0 / ' . $amount . ' ' . $itemname . '<br />';
         }
     }
+        
+    // Complete Quest (ajax onclick request.)
+    if ($totalComplete >= $totalObjectives)
+    {
+        $dbQuests->questComplete($questid, $userid);
+        if ($playerQuest->completed === 1)
+        {
+            echo '<a onclick="completeQuest(\''.$questid.'\')">Complete Quest</a>';   
+        }
+    }
+}
+else
+{
+    echo 'An unknown error occurred.';
 }
