@@ -1,14 +1,11 @@
-<songs>
-    <song dateplayed="2011-07-24 19:40:26">
-        <title>I left my heart on Europa</title>
-        <artist>Ship of Nomads</artist>
-    </song>
-    <song dateplayed="2011-07-24 19:27:42">
-        <title>Oh Ganymede</title>
-        <artist>Beefachanga</artist>
-    </song>
-    <song dateplayed="2011-07-24 19:23:50">
-        <title>Kallichore</title>
-        <artist>Jewitt K. Sheppard</artist>
-    </song>
-</songs>
+<quests>
+        <quest id="1">
+            <title>Quest Title 1</title>
+            <part1>This is part 1 of the quest.</part1>
+            <part2>This is part 2 of the quest.</part2>
+            <part3>This is part 3 of the quest.</part3>
+            <part4>This is part 4 of the quest.</part4>
+            <completed>This is completed dialog of the quest.</completed>
+        </quest>
+    
+</quests>
