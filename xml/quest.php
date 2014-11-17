@@ -41,6 +41,7 @@ class Quests
         $this->dbh = $dbh;
     }
     
+
     /**
      * Get the quest actions of a quest, based on the 'questid'
      * @param int $questid
@@ -49,7 +50,7 @@ class Quests
     public function questActions($questid)
     {
         $query = $this->dbh->prepare('SELECT `step1`,`step2`,`step3`,`step4`,`step5`,
-            `levelRequired`,`requiredQuest`,`questname`,`mobid` FROM `quest_actions`
+            `requiredLevel`,`requiredQuest`,`questname`,`mobid` FROM `quest_actions`
             WHERE `questid` = ?');
         $query->execute(array($questid));
         
@@ -58,6 +59,7 @@ class Quests
         return ($query->rowCount() == 0) ? false : $query->fetch(PDO::FETCH_OBJ);
     }
     
+
     /**
      * Get the player quest
      * @param int $questid
@@ -66,7 +68,7 @@ class Quests
      */
     public function playerQuest($questid, $userid)
     {
-        $query = $this->dbh->prepare('SELECT `step`,`completed`,`dateStarted` FROM `playerquests` 
+        $query = $this->dbh->prepare('SELECT `completed`,`dateStarted` FROM `playerquests` 
             WHERE `questid` = ?
             AND `userid` = ?');
         $query->execute(array($questid, $userid));
@@ -76,6 +78,7 @@ class Quests
         return ($query->rowCount() == 0) ? false : $query->fetch(PDO::FETCH_OBJ);
     }
        
+
     /**
      * Get the quest objectives of a quest, based off the 'questid'
      * @param int $questid
@@ -93,6 +96,7 @@ class Quests
         return ($query->rowCount() == 0) ? false : $query->fetchAll(PDO::FETCH_OBJ);
     }
         
+
     /**
      * Get the total amount of 'kills'
      * @param int $questid
@@ -111,6 +115,7 @@ class Quests
         return $query->fetchColumn();
     }
        
+
     /**
      * Set the current players quest to completed.
      * @param int $questid
@@ -123,7 +128,60 @@ class Quests
             AND `userid` = ?');
         $query->execute(array($questid, $userid));
     }
+    
+    
+    /**
+     * Accept the quest - Insert into `playerquests`
+     * @param int $questid
+     * @param int $userid
+     * @param date $date
+     */
+    public function acceptQuest($questid, $userid, $date)
+    {
+        if (!$this->playerQuest($questid, $userid))
+        {
+            $query = $this->dbh->prepare('INSERT INTO `playerquests` (`questid`,`userid`,`dateStarted`) VALUES (?,?,?)');
+            $query->execute(array($questid, $userid, $date));
+        }
+    }
+    
+
+    /**
+     * Check if a required quest has been completed, based off the 'required' questid.
+     * @param int $questid
+     * @param int $userid
+     * @return bool
+     */
+    public function checkRequiredQuest($questid, $userid)
+    {
+        // Is there a required quest?
+        if (isset($questid))
+        {
+            if (!$this->playerQuest($questid, $userid))
+            {
+                return false; // No Quest found.
+            }
+            else
+            {
+                $playerQuest = $this->playerQuest($questid, $userid);
+                if ($playerQuest->completed === 0)
+                {
+                    return false; // Quest incomplete.
+                }
+                elseif ($playerQuest->completed === 1)
+                {
+                    return true; // Quest complete.
+                }
+            }
+        }
+        else
+        {
+            return true; // No required Quest.
+        }
+    }
 }
+
+// Quest.php
 
 $dbh = new Database();
 $dbQuests = new Quests($dbh);
@@ -220,3 +278,77 @@ else
 {
     echo 'An unknown error occurred.';
 }
+
+// Accept Quest (ajax page load)
+
+require 'core/classes/session.class.php';
+Session::init();
+require_once 'core/classes/database.class.php';
+require_once 'core/classes/item.class.php';
+require_once 'core/classes/quest.class.php';
+
+$dbh = new Database();
+$userid = Session::get('userid');
+$questid = (int) $_GET['questid'];
+
+$quests = new Quests($dbh);
+
+if (isset($questid))
+{
+    $questActions = $quests->questActions($questid);
+    if (!$questActions)
+    {
+        echo 'This quest does not exist.';
+        exit;
+    }
+    
+    $playerQuest = $quests->playerQuest($questid, $userid);
+    
+    if (!$playerQuest)
+    {
+        // Check required quest.
+        $requiredQuest = $questActions->requiredQuest;
+        if ($quests->checkRequiredQuest($requiredQuest, $userid))
+        {
+            if ($playerQuest->completed === 0 OR $playerQuest->completed === 1)
+            {
+                echo 'You have either already accepted, or completed this quest! [Glitch found].';
+            }
+            
+            // Insert the newly accepted quest!
+            $now = new DateTime();
+    	    $date = $now->format('Y-m-d h:i:s');
+            $quests->acceptQuest($questid, $userid, $date);
+            
+            echo $questActions->step2;
+            
+        }
+        else
+        {
+            echo 'You must complete the required quest before accepting this quest.';
+        }
+    }
+    else
+    {
+        echo 'You have already accepted this quest!';
+    }
+}
+
+
+// Complete Quest (ajax page load)
+
+require 'core/classes/session.class.php';
+Session::init();
+require_once 'core/classes/database.class.php';
+require_once 'core/classes/item.class.php';
+require_once 'core/classes/quest.class.php';
+
+$dbh = new Database();
+$userid = Session::get('userid');
+$questid = (int) $_GET['questid'];
+
+$quests = new Quests($dbh);
+
+$questActions = $quests->questActions($questid);
+
+
