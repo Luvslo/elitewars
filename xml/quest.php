@@ -145,6 +145,21 @@ class Quests
         }
     }
     
+    
+    /**
+     * Clear Quest Log for repeatable quests.
+     * @param int $questid
+     * @param int $userid
+     */
+    public function clearPlayerQuest($questid, $userid)
+    {
+        $query = $this->dbh->prepare('DELETE FROM `playerquests`
+            WHERE `questid` = ?
+            AND `userid` = ?
+            AND `completed` = 1');
+        $query->execute(array($questid, $userid));
+    }
+    
 
     /**
      * Check if a required quest has been completed, based off the 'required' questid.
@@ -179,6 +194,93 @@ class Quests
             return true; // No required Quest.
         }
     }
+    
+    
+    /**
+     * Get the quest rewards of a quest, based off the 'questid'
+     * @param int $questid
+     * @return false : fetchAll (obj)
+     */
+    public function questRewards($questid)
+    {
+        $query = $this->dbh->prepare('SELECT `experience`,`itemid`,`itemType`,`gold` FROM `quest_reward`
+            WHERE `questid` = ?');
+        $query->execute(array($questid));
+        
+        return ($query->rowCount() == 0) false : $query->fetchAll(PDO::FETCH_OBJ);
+    }
+    
+    
+    /**
+     * Quest Experience Reward
+     * @param int $xpGain
+     * @param int $userid
+     */
+    public function questRewardExp($xpGain, $userid)
+    {
+        $query = $this->dbh->prepare('UPDATE `stats` SET 
+            `exp` = `exp`+?, 
+            `ggain` = `ggain`+?, 
+            `gtoday` = `gtoday`+?
+            WHERE `id` = ?');
+        $query->execute(array($xpGain, $xpGain, $xpGain, $userid));
+    }
+    
+    
+    /**
+     * Give (insert) the reward item to the player
+     * @param int $itemid
+     * @param int $userid
+     * @param string $type
+     * @param int $expires
+     */
+    public function insertPlayerItem($itemid, $userid, $type, $expires)
+    {
+        $query = $this->dbh->prepare('INSERT INTO `playeritems`
+            (`itemid`,`id`,`type`,`expires) VALUES (?,?,?,?)');
+        $query->execute(array($itemid, $userid, $type, $expires));
+    }
+    
+    
+    
+    /**
+     * Remove playeritems (setting to dropped)
+     * @param int $itemid
+     * @param int $userid
+     * @param int $amount - The limit on how many items to set as 'dropped'
+     */
+    public function clearQuestItems($itemid, $userid, $amount)
+    {
+        $query = $this->dbh->prepare('UPDATE `playeritems` SET `dropped` = 1
+            WHERE `itemid` = :itemid
+            AND `id` = :id
+            LIMIT :limit');
+        $query->bindValue(':itemid', $itemid, PDO::PARAM_INT);
+        $query->bindValue(':id', $userid, PDO::PARAM_INT);
+        $query->bindValue(':limit', (int)trim($amount), PDO::PARAM_INT);
+        $query->execute();
+    }
+    
+    
+    
+    /**
+     * Remove quest kills
+     * @param int $killid
+     * @param int $userid
+     * @param int $amount - The limit on how many kills to remove from the log.
+     */
+    public function clearQuestKills($killid, $userid, $questid, $itemid)
+    {
+        $query = $this->dbh->prepare('DELETE FROM `questkills` WHERE `realmobid` = :realmobid
+            AND `id` = :id
+            AND `questid` = :questid
+            LIMIT :limit');
+        $query->binValue(':realmobid', $killid, PDO::PARAM_INT);
+        $query->bindValue(':id', $userid, PDO::PARAM_INT);
+        $query->bindValue(':questid', $questid, PDO::PARAM_INT);
+        $query->bindValue(':limit', (int)trim($amount), PDO::PARAM_INT);
+    }
+    
 }
 
 // Quest.php
@@ -267,11 +369,11 @@ elseif ($playerQuest->completed === 0)
     // Complete Quest (ajax onclick request.)
     if ($totalComplete >= $totalObjectives)
     {
-        $dbQuests->questComplete($questid, $userid);
+        echo '<a style="font-weight:bold;" onclick="completeQuest(\''.$questid.'\')">Complete Quest</a>';   
+        /*$dbQuests->questComplete($questid, $userid);
         if ($playerQuest->completed === 1)
         {
-            echo '<a onclick="completeQuest(\''.$questid.'\')">Complete Quest</a>';   
-        }
+        }*/
     }
 }
 else
@@ -349,6 +451,95 @@ $questid = (int) $_GET['questid'];
 
 $quests = new Quests($dbh);
 
-$questActions = $quests->questActions($questid);
+if (isset($questid))
+{
+    $questActions = $quests->questActions($questid);
+    if (!$questActions)
+    {
+        echo 'This quest does not exist.';
+        exit;
+    }
+    
+    $playerQuest = $quests->playerQuest($questid, $userid);
+    
+    // Check to see if the user has even started and/or completed the quest.
+    if ($playerQuest->completed === 1)
+    {
+        echo $questActions->part4 . '<br /><br />';
+
+        $quests->questComplete($questid, $userid);   
+        
+        // Repeatable Quest.
+        if ($questActions->repeatable === 1)
+        {
+            clearPlayerQuest($questid, $userid);
+        }
+        
+        // Quest Rewarding (exp, items, gold)
+        foreach ($quests->questRewards($questid) as $rewards)
+        {
+            $exp = $rewards->experience;
+            $itemid = $rewards->itemid;
+            $itype = $rewards->itemType;
+            $gold = $rewards->gold;
+            
+            // Item(s)
+            if (isset($itemid))
+            {
+                $item = $items->itemData($itemid);
+                $itemname = $item['name'];
+                $duration = $item['duration'];
+                $expires = ($itype != 'potions') ? 0 : $duration:
+                $quests->insertPlayerItem($itemid, $userid, $itype, $expires); 
+                $item_output .= '<span style="font-weight:bold;">You have received a ' . $itemname . '</span><br />';
+            }
+            
+            // Experience
+            if ($exp > 0)
+            {
+                $quests->questExpReward($exp, $userid);
+                echo '<span style="font-weight:bold;">You have received '. number_format($exp) . ' experience.</span><br /><br />';
+            }
+            
+            // Gold
+            if ($gold > 0)
+            {
+                echo '<span style="font-weight:bold;">You have received '. number_format($gold) . ' experience.</span><br /><br />';
+            }
+        }
+        
+        echo $item_output . '<br /><br />';
+        
+
+        foreach ($quests->questObjectives($questid) as $objective)
+        {
+            $killid = $objective->killid;
+            $itemid = $objective->itemid;
+            $amount = $objective->amount;
+                
+            // Clearing the questkills.
+            if (isset($killid))
+            {
+                $quests->clearQuestKills($killid, $userid, $questid, $amount);
+            }
+            if (isset($itemid))
+            {
+                // Remove quest items.
+                if ($questActions->keepItems === 0)
+                {
+                    $quests->clearQuestItems($itemid, $userid, $amount);
+                }
+            }
+        }
+    }
+    elseif ($playerQuest->completed === 0 OR !$playerQuest)
+    {
+        echo 'You have not completed this quest!';
+    }
+}
+else
+{
+    echo 'Invalid quest.';
+}
 
 
