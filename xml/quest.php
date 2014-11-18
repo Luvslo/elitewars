@@ -162,15 +162,29 @@ class Quests
     
 
     /**
-     * Check if a required quest has been completed, based off the 'required' questid.
-     * @param int $questid
+     * Check if a required quest has been completed
+     * @param int $questid - The required quest's questid.
      * @param int $userid
      * @return bool
      */
     public function checkRequiredQuest($questid, $userid)
     {
         // Is there a required quest?
-        if (isset($questid))
+        if ($questid > 0)
+        {
+            // No quest log found
+            // Quest incomplete
+            // Quest complete!
+            return (!$this->playerQuest($questid, $userid))
+                ? false : (($playerQuest->completed === 0) ? false : true);
+        }
+        else
+        {
+            return true; // No required quest found.
+        }
+                
+        // Is there a required quest?
+        if ($questid > 0)
         {
             if (!$this->playerQuest($questid, $userid))
             {
