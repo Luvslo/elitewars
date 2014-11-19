@@ -1,33 +1,33 @@
 <script>
-
-// Complete Quest
-function completeQuest(questid)
-{
-    $.ajax({
-       type: 'GET',
-       cache: false,
-       url: 'includes/questComplete.php?questid='+questid,
-       success: function (html)
-       {
-           $('#completeQuest').html(html);
-       }
-    });
-}
-
-// Accept Quest
-function acceptQuest(questid)
-{
-    $.ajax({
-        type: 'GET',
-        cache: false,
-        url: 'includes/questAccept.php?questid='+questid,
-        success: function (html)
-        {
-            $('#acceptQuest').html(html);
-        }
-    });
-}
-
+    
+    // Complete Quest
+    function completeQuest(questid)
+    {
+        $.ajax({
+           type: 'GET',
+           cache: false,
+           url: 'includes/questComplete.php?questid='+questid,
+           success: function (html)
+           {
+               $('#completeQuest').html(html);
+           }
+        });
+    }
+    
+    // Accept Quest
+    function acceptQuest(questid)
+    {
+        $.ajax({
+            type: 'GET',
+            cache: false,
+            url: 'includes/questAccept.php?questid='+questid,
+            success: function (html)
+            {
+                $('#acceptQuest').html(html);
+            }
+        });
+    }
+    
 </script>
 
 <?php
@@ -42,92 +42,92 @@ class Quests
     }
     
 
-    /**
-     * Get the quest actions of a quest, based on the 'questid'
-     * @param int $questid
-     * @return bool (false) : fetch (obj)
-     */
-    public function questActions($questid)
-    {
-        $query = $this->dbh->prepare('SELECT `step1`,`step2`,`step3`,`step4`,`step5`,
-            `requiredLevel`,`requiredQuest`,`questname`,`mobid` FROM `quest_actions`
-            WHERE `questid` = ?');
-        $query->execute(array($questid));
+        /**
+         * Get the quest actions of a quest, based on the 'questid'
+         * @param int $questid
+         * @return bool (false) : fetch (obj)
+         */
+        public function questActions($questid)
+        {
+            $query = $this->dbh->prepare('SELECT `step1`,`step2`,`step3`,`step4`,`step5`,
+                `requiredLevel`,`requiredQuest`,`questname`,`mobid` FROM `quest_actions`
+                WHERE `questid` = ?');
+            $query->execute(array($questid));
+            
+            // false = non existing quest
+            // true = fetches the actions as an object
+            return ($query->rowCount() == 0) ? false : $query->fetch(PDO::FETCH_OBJ);
+        }
         
-        // false = non existing quest
-        // true = fetches the actions as an object
-        return ($query->rowCount() == 0) ? false : $query->fetch(PDO::FETCH_OBJ);
-    }
     
-
-    /**
-     * Get the player quest
-     * @param int $questid
-     * @param int $userid
-     * @return bool (false) : fetch (obj)
-     */
-    public function playerQuest($questid, $userid)
-    {
-        $query = $this->dbh->prepare('SELECT `completed`,`dateStarted` FROM `playerquests` 
-            WHERE `questid` = ?
-            AND `userid` = ?');
-        $query->execute(array($questid, $userid));
+        /**
+         * Get the player quest
+         * @param int $questid
+         * @param int $userid
+         * @return bool (false) : fetch (obj)
+         */
+        public function playerQuest($questid, $userid)
+        {
+            $query = $this->dbh->prepare('SELECT `completed`,`dateStarted` FROM `playerquests` 
+                WHERE `questid` = ?
+                AND `userid` = ?');
+            $query->execute(array($questid, $userid));
+                
+            // false = no quest active
+            // true = fetches the players quest log for the result quest as am object.
+            return ($query->rowCount() == 0) ? false : $query->fetch(PDO::FETCH_OBJ);
+        }
+           
+    
+        /**
+         * Get the quest objectives of a quest, based off the 'questid'
+         * @param int $questid
+         * @return bool (false) : fetchAll (obj)
+         */
+        public function questObjectives($questid)
+        {
+            // type (enum) 'kill,collect,talk'
+            $query = $this->dbh->prepare('SELECT `killid`,`collectid`,`amount` FROM `quest_objectives`
+                WHERE `questid` = ?');
+            $query->execute(array($questid))
+                
+            // false = no quest
+            // true = fetches all the objectives (kills, items, talking) as an object.
+            return ($query->rowCount() == 0) ? false : $query->fetchAll(PDO::FETCH_OBJ);
+        }
             
-        // false = no quest active
-        // true = fetches the players quest log for the result quest as am object.
-        return ($query->rowCount() == 0) ? false : $query->fetch(PDO::FETCH_OBJ);
-    }
-       
-
-    /**
-     * Get the quest objectives of a quest, based off the 'questid'
-     * @param int $questid
-     * @return bool (false) : fetchAll (obj)
-     */
-    public function questObjectives($questid)
-    {
-        // type (enum) 'kill,collect,talk'
-        $query = $this->dbh->prepare('SELECT `killid`,`collectid`,`amount` FROM `quest_objectives`
-            WHERE `questid` = ?');
-        $query->execute(array($questid))
-            
-        // false = no quest
-        // true = fetches all the objectives (kills, items, talking) as an object.
-        return ($query->rowCount() == 0) ? false : $query->fetchAll(PDO::FETCH_OBJ);
-    }
-        
-
-    /**
-     * Get the total amount of 'kills'
-     * @param int $questid
-     * @param int $userid
-     * @param date $date
-     * @return int fetchColumn - The total number of rows
-     */
-    public function playerKills($questid, $userid, $date)
-    {
-        $query = $this->dbh->prepare('SELECT COUNT(`attackid`) FROM `questkills`
-            WHERE `questid` = ?
-            AND `userid` = ?
-            AND `date` > ?');
-        $query->execute(array($questid, $userid, $date));
-            
-        return $query->fetchColumn();
-    }
-       
-
-    /**
-     * Set the current players quest to completed.
-     * @param int $questid
-     * @param int $userid
-     */
-    public function questComplete($questid, $userid)
-    {
-        $query = $this->dbh->prepare('UPDATE `playerquests` SET `completed` = 1
-            WHERE `questid` = ?
-            AND `userid` = ?');
-        $query->execute(array($questid, $userid));
-    }
+    
+        /**
+         * Get the total amount of 'kills'
+         * @param int $questid
+         * @param int $userid
+         * @param date $date
+         * @return int fetchColumn - The total number of rows
+         */
+        public function playerKills($questid, $userid, $date)
+        {
+            $query = $this->dbh->prepare('SELECT COUNT(`attackid`) FROM `questkills`
+                WHERE `questid` = ?
+                AND `userid` = ?
+                AND `date` > ?');
+            $query->execute(array($questid, $userid, $date));
+                
+            return $query->fetchColumn();
+        }
+           
+    
+        /**
+         * Set the current players quest to completed.
+         * @param int $questid
+         * @param int $userid
+         */
+        public function questComplete($questid, $userid)
+        {
+            $query = $this->dbh->prepare('UPDATE `playerquests` SET `completed` = 1
+                WHERE `questid` = ?
+                AND `userid` = ?');
+            $query->execute(array($questid, $userid));
+        }
     
     
     /**
@@ -294,6 +294,8 @@ class Quests
         $query->bindValue(':questid', $questid, PDO::PARAM_INT);
         $query->bindValue(':limit', (int)trim($amount), PDO::PARAM_INT);
     }
+    
+    
     
 }
 
